@@ -6,7 +6,8 @@ import type { SimulationRequest, SimulationResponse } from '../lib/quantum/worke
 
 export default function Workspace() {
     const [numQubits, setNumQubits] = useState(5);
-    const [gates, setGates] = useState<Gate[]>([]);
+    const [code, setCode] = useState<string>('');
+    const [showCode, setShowCode] = useState<boolean>(false);
     const [results, setResults] = useState<SimulationResponse | null>(null);
     const [isComputing, setIsComputing] = useState(false);
 
@@ -24,22 +25,18 @@ export default function Workspace() {
         };
     }, []);
 
-    useEffect(() => {
-        if (workerRef.current) {
-            setIsComputing(true);
-            workerRef.current.postMessage({ numQubits, gates } as SimulationRequest);
-        }
-    }, [gates, numQubits]);
-
-
-    const [code, setCode] = useState<string>('');
-
     // Parse pseudo code into Gates whenever code changes
-    useEffect(() => {
+    const gates = React.useMemo(() => {
         const parsedGates: Gate[] = [];
         const lines = code.split('\n');
         for (const line of lines) {
-            const parts = line.trim().split(/\s+/).filter(Boolean);
+            let l = line.trim();
+            // Basic OpenQASM skip
+            if (l.toLowerCase().startsWith('openqasm') || l.toLowerCase().startsWith('include') || l.toLowerCase().startsWith('qreg') || l.toLowerCase().startsWith('creg')) continue;
+            // Clean semicolons and brackets for basic QASM support
+            l = l.replace(/;/g, '').replace(/q\[(\d+)\]/g, '$1');
+
+            const parts = l.split(/[\s,]+/).filter(Boolean);
             if (parts.length < 2) continue;
             const op = parts[0].toUpperCase() as GateType;
 
@@ -57,16 +54,24 @@ export default function Workspace() {
                         if (parts[2].includes('PI')) p = Math.PI * (parseFloat(parts[2].replace('PI', '')) || 1);
                         parsedGates.push({ type: op, targets: [t], param: p });
                     }
-                } else if (Object.values(GateType).includes(op)) {
+                } else if ((Object.values(GateType) as string[]).includes(op)) {
                     const t = parseInt(parts[1].replace(/\D/g, ''));
                     parsedGates.push({ type: op, targets: [t] });
                 }
-            } catch (e) {
+            } catch {
                 // ignore parsing errors and move on
             }
         }
-        setGates(parsedGates);
+        return parsedGates;
     }, [code]);
+
+    useEffect(() => {
+        if (workerRef.current) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setIsComputing(true);
+            workerRef.current.postMessage({ numQubits, gates } as SimulationRequest);
+        }
+    }, [gates, numQubits]);
 
     const loadTemplate = (name: string) => {
         if (name === 'GHZ') {
@@ -141,17 +146,35 @@ export default function Workspace() {
                     <button className="btn" onClick={() => loadTemplate('VQE_Ansatz_Layer')}>VQE</button>
                     <button className="btn" onClick={() => loadTemplate('QAOA_MaxCut')}>QAOA</button>
                     <button className="btn" onClick={() => loadTemplate('Random_Circuit')}>Random</button>
+                    <button className="btn" onClick={() => setShowCode(!showCode)} style={{ borderColor: showCode ? 'var(--accent-primary)' : 'var(--border-light)' }}>
+                        {showCode ? 'Hide Code' : 'View / Edit Code'}
+                    </button>
                     <div style={{ flex: 1 }}></div>
                     <button className="btn" onClick={clearCircuit} style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }}>Clear</button>
                 </div>
 
+                {numQubits >= 10 && (
+                    <div style={{ marginBottom: '1rem', padding: '0.75rem', borderRadius: '8px', background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.2)', color: '#eab308', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        Performance Warning: 10+ qubits may cause high memory and CPU usage in the browser.
+                    </div>
+                )}
+
                 <div style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
-                    <textarea
-                        value={code}
-                        onChange={(e) => setCode(e.target.value)}
-                        placeholder="Write pseudo code here... e.g.&#10;H 0&#10;CX 0 1&#10;RZ 1 1.57"
-                        style={{ width: '100%', height: '150px', background: 'var(--bg-panel)', color: 'var(--text-primary)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '1rem', fontFamily: 'var(--font-geist-mono), monospace', resize: 'vertical' }}
-                    />
+                    {showCode && (
+                        <div className="animate-fade" style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '2px' }}>
+                            <div style={{ padding: '0.5rem 1rem', borderBottom: '1px solid var(--border-light)', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>Quantum Assembly (QASM/Pseudo)</span>
+                            </div>
+                            <textarea
+                                value={code}
+                                onChange={(e) => setCode(e.target.value)}
+                                placeholder="Write pseudo code here... e.g.&#10;H 0&#10;CX 0 1&#10;RZ 1 1.57"
+                                style={{ width: '100%', height: '150px', background: 'transparent', color: 'var(--text-primary)', border: 'none', padding: '1rem', fontFamily: 'var(--font-geist-mono), monospace', resize: 'vertical', outline: 'none' }}
+                                spellCheck={false}
+                            />
+                        </div>
+                    )}
 
                     <div className="circuit-grid" style={{ flex: 1, border: '1px solid var(--border-light)', borderRadius: '8px', padding: '1rem', minHeight: '200px' }}>
                         {Array.from({ length: numQubits }).map((_, qIndex) => (
@@ -245,6 +268,39 @@ export default function Workspace() {
                                 </div>
                             )}
                         </div>
+
+                        {/* State Probabilities Visualization */}
+                        {results.amplitudes && results.amplitudes.length > 0 && (
+                            <div style={{ marginTop: '2rem' }}>
+                                <div className="metric-header" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                                    </svg>
+                                    Final State Probabilities (Top 8)
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
+                                    {(() => {
+                                        const probs: { state: string; p: number }[] = [];
+                                        const numStates = 1 << numQubits;
+                                        for (let i = 0; i < numStates; i++) {
+                                            const r = results.amplitudes[i * 2];
+                                            const im = results.amplitudes[i * 2 + 1];
+                                            const p = r * r + im * im;
+                                            if (p > 0.0001) {
+                                                probs.push({ state: '|' + i.toString(2).padStart(numQubits, '0') + '⟩', p });
+                                            }
+                                        }
+                                        return probs.sort((a, b) => b.p - a.p).slice(0, 8).map((st, idx) => (
+                                            <div key={idx} style={{ background: 'var(--bg-panel)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '0.75rem', position: 'relative', overflow: 'hidden' }}>
+                                                <div style={{ position: 'absolute', bottom: 0, left: 0, height: '3px', background: 'var(--accent-primary)', width: `${st.p * 100}%` }}></div>
+                                                <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontFamily: 'var(--font-geist-mono)', fontWeight: 'bold' }}>{st.state}</div>
+                                                <div style={{ fontSize: '1.25rem', color: 'var(--accent-primary)', marginTop: '0.25rem' }}>{(st.p * 100).toFixed(1)}%</div>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>

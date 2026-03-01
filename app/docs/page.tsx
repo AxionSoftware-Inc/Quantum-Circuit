@@ -9,46 +9,55 @@ export default function DocsPage() {
             </h1>
 
             <div style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '1.1rem' }}>
-                <p style={{ marginBottom: '2rem' }}>
-                    Welcome to the KET Profiler documentation. Here you can learn how the profiler computes algorithms.
+                <p style={{ marginBottom: '2.5rem' }}>
+                    Welcome to the <strong>KET Profiler</strong> documentation. Here you can learn about the architecture, how the profiler computes algorithms, and the underlying physics metrics used.
                 </p>
 
-                <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginTop: '2.5rem', marginBottom: '1rem' }}>Supported Gates</h2>
+                <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginTop: '2.5rem', marginBottom: '1rem' }}>1. Overview</h2>
+                <p style={{ marginBottom: '1.5rem' }}>
+                    The KET Quantum Profiler is a <strong>Client-Side (CSR) quantum analysis web application</strong> that provides real-time visibility into quantum circuit execution and resource metrics directly inside your browser.
+                    It performs heavy statevector simulations and Von Neumann entanglement entropy calculations 100% locally.
+                </p>
+
+
+                <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginTop: '2.5rem', marginBottom: '1rem' }}>2. Supported Commands and Gates</h2>
                 <div style={{ background: 'var(--bg-panel)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
                     <p>
-                        The backend engine (running in the browser) natively supports the following gate primitives on Statevectors:
+                        The backend engine natively supports standard pseudocode or basic <strong>OpenQASM 2.0</strong> syntaxes on Statevectors:
                     </p>
                     <ul style={{ marginLeft: '1.5rem', marginTop: '1rem' }}>
-                        <li><code>H</code> - Hadamard</li>
-                        <li><code>X, Y, Z</code> - Pauli Gates</li>
-                        <li><code>RX, RY, RZ(&theta;)</code> - Parametrized Rotation Gates</li>
-                        <li><code>CX</code> - CNOT (Controlled-X)</li>
-                        <li><code>CZ</code> - Controlled-Z</li>
+                        <li style={{ marginBottom: '0.4rem' }}><code>H &lt;target&gt;</code> - Hadamard</li>
+                        <li style={{ marginBottom: '0.4rem' }}><code>X, Y, Z &lt;target&gt;</code> - Pauli Gates</li>
+                        <li style={{ marginBottom: '0.4rem' }}><code>RX, RY, RZ &lt;target&gt; &lt;theta&gt;</code> - Parametrized Rotation Gates (e.g. <code>RZ 0 1.57</code> or <code>RX 1 PI/2</code>)</li>
+                        <li style={{ marginBottom: '0.4rem' }}><code>CX &lt;control&gt; &lt;target&gt;</code> - CNOT (Controlled-X)</li>
+                        <li style={{ marginBottom: '0.4rem' }}><code>CZ &lt;control&gt; &lt;target&gt;</code> - Controlled-Z</li>
                     </ul>
                 </div>
 
-                <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginTop: '2.5rem', marginBottom: '1rem' }}>Entanglement Entropy</h2>
+                <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginTop: '2.5rem', marginBottom: '1rem' }}>3. Entanglement Entropy</h2>
                 <p style={{ marginBottom: '1.5rem' }}>
                     When computing the heatmap, the application creates a bi-partition for every possible wire cut.
                     For a 5-qubit circuit, the cuts are: <code>(0|1234), (01|234), (012|34), (0123|4)</code>.
                 </p>
                 <p style={{ marginBottom: '1.5rem' }}>
-                    For each partition, it calculates the reduced density matrix by tracing out the smaller subset,
+                    For each partition, it calculates the <strong>reduced density matrix</strong> by tracing out the smaller subset,
                     then computes the eigenvalues using the iterative <strong>Jacobi Eigenvalue Algorithm</strong> to derive
-                    the exact Von Neumann Entropy in bits.
+                    the exact Von Neumann Entropy in bits. The deeper the redness on the heatmap, the higher the entanglement scale.
                 </p>
 
-                <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginTop: '2.5rem', marginBottom: '1rem' }}>Heuristic Score</h2>
+                <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginTop: '2.5rem', marginBottom: '1rem' }}>4. State Probabilities</h2>
                 <p style={{ marginBottom: '1.5rem' }}>
-                    The Hardness heuristic attempts to reflect the complexity of finding a complete classical tensor-network contraction sequence:
+                    Upon analyzing all steps, the final step calculates the squared magnitudes of the complex probability amplitudes for every state in the superposition. The result shows the <strong>Top 8 most probable measurement outcomes</strong>, helping developers confirm that their algorithm converges to the desired state.
                 </p>
-                <code style={{ background: '#11121a', padding: '1rem', display: 'block', borderRadius: '8px', color: '#fff', fontSize: '0.95rem' }}>
-                    Score = min(100, Peak_Entropy * 15 + Entangling_Gates * 2 + sqrt(Depth) * 5)
-                </code>
+
+                <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginTop: '2.5rem', marginBottom: '1rem' }}>5. Performance Warning</h2>
+                <p style={{ marginBottom: '1.5rem' }}>
+                    We use <strong>Web Workers</strong> to offload computations to a separate thread so the user interface remains responsive. However, simulating $N$ qubits requires computing $2^N$ complex amplitudes and up to $O(2^2N)$ matrix operations for entropy. Due to Javascript memory limitations, selecting <strong>10 or more qubits</strong> may result in performance drops or browser freezes on low-end devices.
+                </p>
 
                 <div style={{ marginTop: '3rem', textAlign: 'center' }}>
                     <Link href="/" className="btn-primary" style={{ textDecoration: 'none' }}>
-                        &laquo; Back to Profiler
+                        &laquo; Back to Profiler Workspace
                     </Link>
                 </div>
             </div>
