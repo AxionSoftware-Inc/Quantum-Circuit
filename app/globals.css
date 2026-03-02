@@ -5,15 +5,15 @@
   --bg-surface: #0a0b10;
   --bg-panel: #11121a;
   --bg-glass: rgba(17, 18, 26, 0.4);
-  
+
   --text-primary: #f8f9fa;
   --text-secondary: #8a8d9b;
   --text-muted: #5b5f70;
-  
+
   --accent-primary: #7c3aed;
   --accent-secondary: #3b82f6;
   --accent-glow: rgba(124, 58, 237, 0.3);
-  
+
   --border-light: rgba(255, 255, 255, 0.05);
   --border-focus: rgba(124, 58, 237, 0.4);
 }
@@ -32,15 +32,21 @@ body {
   padding: 0;
   overflow-x: hidden;
   background-image: radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.03), transparent 25%),
-                    radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.04), transparent 25%);
+    radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.04), transparent 25%);
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: 'Outfit', sans-serif;
   letter-spacing: -0.02em;
 }
 
-code, .mono {
+code,
+.mono {
   font-family: 'Fira Code', monospace;
 }
 
@@ -70,6 +76,7 @@ code, .mono {
   font-weight: 800;
   background: linear-gradient(135deg, #fff, #a78bfa);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -141,10 +148,12 @@ code, .mono {
 
 .editor-panel {
   flex: 1;
+  min-width: 0;
 }
 
 .metrics-panel {
   width: 380px;
+  flex-shrink: 0;
 }
 
 /* Section Titles */
@@ -159,7 +168,8 @@ code, .mono {
 }
 
 /* Forms and Inputs */
-.select-box, .input-box {
+.select-box,
+.input-box {
   background: var(--bg-panel);
   border: 1px solid var(--border-light);
   color: var(--text-primary);
@@ -170,7 +180,8 @@ code, .mono {
   width: 100%;
 }
 
-.select-box:focus, .input-box:focus {
+.select-box:focus,
+.input-box:focus {
   outline: none;
   border-color: var(--accent-primary);
 }
@@ -178,7 +189,7 @@ code, .mono {
 /* Gate Buttons */
 .gate-btn {
   background: #1e1e2d;
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   color: #fff;
   border-radius: 6px;
   width: 48px;
@@ -193,6 +204,7 @@ code, .mono {
   transition: all 0.2s ease;
   user-select: none;
 }
+
 .gate-btn:hover {
   background: #2a2a3f;
   border-color: var(--accent-primary);
@@ -206,6 +218,23 @@ code, .mono {
   margin-top: 1rem;
   overflow-x: auto;
   padding-bottom: 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-primary) transparent;
+}
+
+/* Custom Scrollbar for the Grid */
+.circuit-grid::-webkit-scrollbar {
+  height: 8px;
+}
+
+.circuit-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.circuit-grid::-webkit-scrollbar-thumb {
+  background: var(--accent-primary);
+  border-radius: 4px;
 }
 
 .circuit-wire {
@@ -213,6 +242,7 @@ code, .mono {
   align-items: center;
   height: 60px;
   position: relative;
+  min-width: max-content;
 }
 
 .circuit-wire::before {
@@ -300,9 +330,10 @@ code, .mono {
   font-weight: 700;
   color: var(--text-primary);
   display: flex;
-  align-items:baseline;
+  align-items: baseline;
   gap: 0.25rem;
 }
+
 .metric-value span {
   font-size: 1rem;
   color: var(--text-muted);
@@ -328,6 +359,7 @@ code, .mono {
   gap: 2px;
   margin-top: 1rem;
 }
+
 .heatmap-cell {
   background: var(--bg-panel);
   border-radius: 2px;
@@ -336,8 +368,15 @@ code, .mono {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade {
